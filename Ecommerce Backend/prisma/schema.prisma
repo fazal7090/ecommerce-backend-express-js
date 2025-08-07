@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// You need to re-run the prisma generate command after every change that's made to your 
+// Prisma schema to update the generated Prisma Client code.
+
+// Users ids should be UUIDS so that they cant be guessed easily.
+// Store Cat Prod ids can be integers as exposing them is not a security risk.
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  stock       Int
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+  storeid     Int 
+  categoryid  Int
+
+  store    Store   @relation(fields: [storeid], references: [id])
+  category Category @relation(fields:[categoryid], references: [id])
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String   @db.VarChar(255)
+  role          String   @db.VarChar(50)
+  email         String   @unique @db.VarChar(255)
+  password      String   @db.VarChar(255)
+  contact       String?  @db.VarChar(50)
+  address       String?  @db.VarChar(500)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  store Store?  
+}
+
+model Store {
+  id          Int       @id @default(autoincrement())
+  name          String   @db.VarChar(255)
+  store_owner_id String  @unique  // one to one relation
+  description String?  @db.VarChar(500)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  seller      User     @relation(fields: [store_owner_id], references: [id])
+  product     Product[]
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?   // optional
+  createdAt   DateTime  @default(now())
+
+  products    Product[] // one-to-many relation (category -> products)
+}
