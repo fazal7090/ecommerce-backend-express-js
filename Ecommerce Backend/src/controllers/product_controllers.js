@@ -9,7 +9,7 @@ export const product_adder = async (req, res) => {
       const { name, description, price, stock } = req.body;
   
       // Multer adds `req.file` when using `upload.single('image')`
-      const imageUrl = req.file ? req.file.path : null;
+      const imageUrl = req.file ? req.file.filename : null;
   
       // Check if product with the same name already exists
       const prod_already_exists = await prisma.product.findFirst({
@@ -67,7 +67,7 @@ export const product_adder = async (req, res) => {
             console.warn('Old image file does not exist:', oldImagePath);
           }
         
-        data.imageUrl = req.file.path;
+        data.imageUrl = req.file.filename;
       }
       
   

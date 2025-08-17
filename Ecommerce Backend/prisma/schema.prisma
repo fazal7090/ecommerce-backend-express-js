@@ -31,9 +31,12 @@ model Product {
   isActive    Boolean  @default(true)
   storeid     Int 
   categoryid  Int
+  imageId     String?   // Cloudinary public_id
+  imageProv   String?   // Cloudinary or S3 or other provider
 
   store    Store   @relation(fields: [storeid], references: [id])
   category Category @relation(fields:[categoryid], references: [id])
+  orderItems OrderItem[] // one-to-many relation (product -> orderItems)
 }
 
 model User {
@@ -47,7 +50,8 @@ model User {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-  store Store?  
+  store Store? 
+  orders Order[] // one-to-many relation (user -> orders) 
 }
 
 model Store {
@@ -60,6 +64,7 @@ model Store {
 
   seller      User     @relation(fields: [store_owner_id], references: [id])
   product     Product[]
+  orders      Order[]  // one-to-many relation (store -> orders)
 }
 
 model Category {
@@ -69,4 +74,29 @@ model Category {
   createdAt   DateTime  @default(now())
 
   products    Product[] // one-to-many relation (category -> products)
+}
+
+model Order {
+  id          Int       @id @default(autoincrement())
+  customerId      String
+  totalAmount Float
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  storeId     Int
+
+  user        User      @relation(fields: [customerId], references: [id])
+  store       Store     @relation(fields: [storeId], references: [id])
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id          Int       @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  quantity    Int
+  price       Float
+
+  order       Order     @relation(fields: [orderId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
 }

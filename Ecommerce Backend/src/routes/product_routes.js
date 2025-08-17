@@ -9,7 +9,7 @@ import Logger from '../lib/logger.js';
 function checkfile(req, res, next) {
   if (!req.file)
   {
-    Logger.warn('Product update failed: No fields provided');
+    Logger.warn('Product update failed: Image field not provided');
     return res.status(400).json({ message: 'Image file is required.' });
   }
   next();
