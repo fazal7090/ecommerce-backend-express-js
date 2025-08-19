@@ -1,7 +1,6 @@
 import Logger from "../../lib/logger.js";
 import { Router } from "express";
 import {
-  create_store,
   add_product,
   update_product,
   total_products_by_category,
@@ -9,11 +8,11 @@ import {
   get_all_products,
   get_products_by_category,
   get_all_categories,
-  get_product_by_id,
 } from "../../controllers/seller controller/seller-product-controller.js";
 import { uploads } from "../../middleware/upload-middleware.js";
 import { handleValidation } from "../../middleware/error-middleware.js";
 import { body, param } from "express-validator";
+import { authMiddleware } from "../../middleware/authmiddleware.js";
 
 const router = Router();
 
@@ -25,33 +24,12 @@ function checkfile(req, res, next) {
   next();
 }
 
-// Create Store
-router.post(
-  "/create-store",
-  [
-    body("storeName")
-      .notEmpty()
-      .withMessage("Store name cannot be empty")
-      .isString()
-      .withMessage("Store name must be a string"),
-
-    body("storeDescription")
-      .notEmpty()
-      .withMessage("Store description cannot be empty")
-      .isString()
-      .withMessage("Store description must be a string"),
-
-    body("ownerid")
-      .notEmpty()
-      .withMessage("Owner ID cannot be empty")
-      .isString()
-      .withMessage("Owner ID must be a string")
-      .isUUID()
-      .withMessage("Owner ID must be a valid UUID"), // optional, for stricter validation
-  ],
-  handleValidation,
-  create_store
-);
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Admins only" });
+  }
+  next();
+};
 
 // Add Product to Store
 router.post(
@@ -97,7 +75,18 @@ router.post(
       .withMessage("Storeid must be a non-negative integer"),
   ],
   handleValidation,
+  authMiddleware,
+  requireAdmin,
   add_product
+);
+
+// Delete Product
+router.delete(
+  "/delete-product/:id",
+  [param("id").isInt().withMessage("Product ID must be an integer")],
+  authMiddleware,
+  requireAdmin,
+  delete_product
 );
 
 // Update Product Price or Stock
@@ -115,53 +104,44 @@ router.put(
       .withMessage("Stock must be a non-negative integer"),
   ],
   handleValidation,
+  authMiddleware,
+  requireAdmin,
   update_product
 );
 
-// Delete Product
-router.delete(
-  "/delete-product/:id",
-  [param("id").isInt().withMessage("Product ID must be an integer")],
-  delete_product
-);
-
-// ALL GET ROUTES
-
-//Get total products in a store , also total products in each category
-router.get(
-  "/get-products/:storeid",
-  [param("storeid").isInt().withMessage("Store ID must be an integer")],
-  total_products_by_category
-);
-
-// Get all products in a store
+//Get all products in a store
 router.get(
   "/get-all-products/:storeid",
   [param("storeid").isInt().withMessage("Store ID must be an integer")],
+  authMiddleware,
+  requireAdmin,
   get_all_products
 );
 
-// Get all categories in a store
-router.get(
-  "/get-all-categories",
-  get_all_categories
-);
+// // ALL GET ROUTES
 
-// Get products by category in a store
-router.get(
-  "/get-products-by-category/:storeid/:categoryid",
-  [
-    param("storeid").isInt().withMessage("Store ID must be an integer"),
-    param("categoryid").isInt().withMessage("Category ID must be an integer"),
-  ],
-  get_products_by_category
-);
+// //Get total products in a store , also total products in each category
+// router.get(
+//   "/get-products/:storeid",
+//   [param("storeid").isInt().withMessage("Store ID must be an integer")],
+//   total_products_by_category
+// );
 
-// Get a single product by ID
-router.get(
-  "/get-product/:id",
-  [param("id").isInt().withMessage("Product ID must be an integer")],
-  get_product_by_id
-);
+// // Get all categories in a store
+// router.get(
+//   "/get-all-categories",
+//   get_all_categories
+// );
 
+// // Get products by category in a store
+// router.get(
+//   "/get-products-by-category/:storeid/:categoryid",
+//   [
+//     param("storeid").isInt().withMessage("Store ID must be an integer"),
+//     param("categoryid").isInt().withMessage("Category ID must be an integer"),
+//   ],
+//   get_products_by_category
+// );
+
+// export default router;
 export default router;
